@@ -10,6 +10,7 @@ import me.fallenbreath.velocitywhitelist.utils.UuidUtils;
 import org.jetbrains.annotations.NotNull;
 import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.yaml.snakeyaml.Yaml;
 
 import java.io.IOException;
@@ -22,18 +23,21 @@ import java.util.UUID;
 
 public class PlayerList
 {
-	private final Set<String> names = Sets.newLinkedHashSet();
+    private static final Logger log = LoggerFactory.getLogger(PlayerList.class);
+    private final Set<String> names = Sets.newLinkedHashSet();
 	private final Map<UUID, @Nullable String> uuids = Maps.newLinkedHashMap();
 	private final String name;
 	private final Path filePath;
+    private final Supplier<Boolean> migrateConfigEnable;
 	private boolean loadOk = false;
 	private final Object lock = new Object();
 	private boolean enabled;
 
-	public PlayerList(String name, Path filePath)
+	public PlayerList(String name, Path filePath, Supplier<Boolean> migrateConfigEnable)
 	{
 		this.name = name;
 		this.filePath = filePath;
+        this.migrateConfigEnable = migrateConfigEnable;
 	}
 
 	public String getName()
@@ -181,13 +185,14 @@ public class PlayerList
 			this.names.addAll(newList.names);
 			this.uuids.clear();
 			this.uuids.putAll(newList.uuids);
+            this.enabled = newList.enabled;
 			this.loadOk = true;
 		}
 	}
 
 	public PlayerList createNewEmptyList()
 	{
-		return new PlayerList(this.name, this.filePath);
+		return new PlayerList(this.name, this.filePath, migrateConfigEnable);
 	}
 
 	@SuppressWarnings({"unchecked", "rawtypes"})
@@ -200,11 +205,18 @@ public class PlayerList
 
 		synchronized (this.lock)
 		{
-			if (options.get("enabled") instanceof Boolean bool) {
-				this.enabled = bool;
-			} else {
-				this.enabled = false;
-			}
+            Boolean migrateValue = migrateConfigEnable.get();
+            if (migrateValue != null) {
+                logger.info("List {} migrated enable value from configuration.", getName());
+                setEnabled(migrateValue);
+                save();
+            } else {
+                if (options.get("enabled") instanceof Boolean bool) {
+                    setEnabled(bool);
+                } else {
+                    setEnabled(false);
+                }
+            }
 
 			this.names.clear();
 			if (options.get("names") instanceof List list)
@@ -251,7 +263,7 @@ public class PlayerList
 
 			this.loadOk = true;
 			logger.info("{} loaded with {} names and {} uuids", this.name, this.names.size(), this.uuids.size());
-		}
+        }
 	}
 
 	public void save() throws IOException

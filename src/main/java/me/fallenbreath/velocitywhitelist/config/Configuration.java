@@ -4,6 +4,7 @@ import com.google.common.collect.Maps;
 import me.fallenbreath.velocitywhitelist.IdentifyMode;
 import me.fallenbreath.velocitywhitelist.PluginMeta;
 import me.fallenbreath.velocitywhitelist.utils.FileUtils;
+import org.jetbrains.annotations.Nullable;
 import org.slf4j.Logger;
 import org.yaml.snakeyaml.Yaml;
 
@@ -20,6 +21,9 @@ public class Configuration
 	private final Path configFilePath;
 
 	private IdentifyMode identifyMode = IdentifyMode.DEFAULT;
+
+    private Boolean migrateWhitelistEnabled;
+    private Boolean migrateBlacklistEnabled;
 
 	public Configuration(Logger logger, Path configFilePath)
 	{
@@ -62,6 +66,27 @@ public class Configuration
 			this.options.putAll(newOptions);
 			migrated = true;
 		}
+        if (this.options.get("_version") instanceof  Integer version) {
+            if (version == 1) {
+                // migrate config version 1 to 2
+
+                Object whitelistEnabled = this.options.get("whitelist_enabled");
+                if (whitelistEnabled instanceof Boolean boolWhitelistEnabled) {
+                    this.migrateWhitelistEnabled = boolWhitelistEnabled;
+                }
+                this.options.remove("whitelist_enabled");
+                Object blacklistEnabled = this.options.get("blacklist_enabled");
+                if (blacklistEnabled instanceof Boolean boolBlacklistEnabled) {
+                    this.migrateBlacklistEnabled = boolBlacklistEnabled;
+                }
+                this.options.remove("blacklist_enabled");
+
+                this.options.remove("_version");
+                this.options.put("_version", 2);
+
+                migrated = true;
+            }
+        }
 
 		if (migrated)
 		{
@@ -102,6 +127,16 @@ public class Configuration
 	{
 		return this.identifyMode;
 	}
+
+    public @Nullable Boolean getMigrateWhitelistEnabled()
+    {
+        return this.migrateWhitelistEnabled;
+    }
+
+    public @Nullable Boolean getMigrateBlacklistEnabled()
+    {
+        return this.migrateBlacklistEnabled;
+    }
 
 	public String getWhitelistKickMessage()
 	{

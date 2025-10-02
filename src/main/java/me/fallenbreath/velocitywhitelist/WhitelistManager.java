@@ -35,8 +35,8 @@ public class WhitelistManager
 	{
 		this.logger = logger;
 		this.config = config;
-		this.whitelist = new PlayerList("Whitelist", dataDirectory.resolve("whitelist.yml"));
-		this.blacklist = new PlayerList("Blacklist", dataDirectory.resolve("blacklist.yml"));
+		this.whitelist = new PlayerList("Whitelist", dataDirectory.resolve("whitelist.yml"), config::getMigrateWhitelistEnabled);
+		this.blacklist = new PlayerList("Blacklist", dataDirectory.resolve("blacklist.yml"), config::getMigrateBlacklistEnabled);
 		this.server = server;
 	}
 

@@ -1,5 +1,5 @@
 # Config file version. Do not edit it
-_version: 1
+_version: 2
 
 # The way to identify a player
 # Options: name, uuid. Default: name
