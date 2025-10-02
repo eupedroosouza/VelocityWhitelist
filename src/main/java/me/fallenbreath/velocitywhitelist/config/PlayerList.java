@@ -23,7 +23,6 @@ import java.util.UUID;
 
 public class PlayerList
 {
-    private static final Logger log = LoggerFactory.getLogger(PlayerList.class);
     private final Set<String> names = Sets.newLinkedHashSet();
 	private final Map<UUID, @Nullable String> uuids = Maps.newLinkedHashMap();
 	private final String name;
